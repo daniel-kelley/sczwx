@@ -1,0 +1,271 @@
+SCZ Weather Station
+
+
+| Beaglebone green wireless |          |     |                                   |
+| Adafruit 3964             | VEML6075 | UV  |                                   |
+| Adafruit 3660             | BME680   | ENV | /sys/bus/iio/devices/iio\:device1 |
+| Adafruit 3686             | PMS5003  | PM  | /dev/ttyS1                        |
+| Argent ADS-WS1            |          | WX  | /dev/ttyUSB0                      |
+
+* sensors
+
+| Argent WS1               | UART2? |      |                                   |
+| PMS5003 Particle Monitor | UART1  |      | drivers/iio/chemical/pms7003.c    |
+| BME680                   | I2C1   | 0x77 | drivers/iio/chemical/bme680_i2c.c |
+| VEML6075 UV sensor       | I2C1   | 0x10 | drivers/iio/light/veml6070.c      |
+
+
+* device tree
+** pms5004
+.compatible = "plantower,pms5003"
+May just do by hand
+
+** bme680
+.compatible = "bosch,bme680"
+
+bme680@77 {
+          compatible = "bosch,bme680";
+          reg = <0x77>;
+};
+
+ls /dev/iio\:device0
+ls /dev/iio\:device1
+ls /proc/device-tree/chosen/overlays
+
+sudo modprobe -v bme680_i2c
+
+cat /sys/bus/iio/devices/iio\:device1/in_temp_input
+
+https://wiki.analog.com/software/linux/docs/iio/iio_snippets
+
+* linux kernel build
+
+sudo apt-get install linux-headers-$(uname -r)
+
+sudo apt update
+sudo apt install linux-headers-4.19.94-ti-r42
+sudo apt install linux-source-4.19.94-ti-r42
+
+* libi2c-dev
+
+sudo apt install libi2c-dev
+
+
+* pins
+
+| p9.1  | gnd       |                                  |       |         |
+| p9.3  | 3v3       |                                  |       |         |
+| p9.5  | 5v0       |                                  |       |         |
+| p9.19 | i2c2_scl  | /lib/firmware/BB-I2C2-00A0.dtbo  | scl   |         |
+| p9.20 | i2c2_sda  | "                                | sda   |         |
+| p9.23 | GPIO_49   |                                  | set   | PU 3v3? |
+| p9.24 | UART1_txd | /lib/firmware/BB-UART1-00A0.dtbo | rx    |         |
+| p9.25 | GPIO_117  |                                  | reset | PU 3V3? |
+| p9.26 | UART1_rxd | "                                | tx    |         |
+|       |           |                                  |       |         |
+
+
+* USB Serial dongle
+
+Bus 001 Device 003: ID 9710:7703 MosChip Semiconductor MCS7703 Serial Port Adapter
+
+https://github.com/tomszilagyi/mos7703
+
+| 1 |     | blu |
+| 2 | rx  | brn |
+| 3 | tx  | blk |
+| 4 |     | vio |
+| 5 | gnd | grn |
+| 6 |     | yel |
+| 7 |     | red |
+| 8 |     | org |
+| 9 |     | gry |
+
+* grow partition
+cd /opt/scripts/tools/
+git pull || true
+sudo ./grow_partition.sh
+sudo reboot
+#uboot_overlay_addr4=/lib/firmware/<file4>.dtbo
+#uboot_overlay_addr5=/lib/firmware/<file5>.dtbo
+
+* config wifi
+
+$  /usr/sbin/connmanctl
+connmanctl> enable wifi
+connmanctl> scan wifi 
+connmanctl> services
+$SSID    wifi_f8d111090ed6_6d617269636f6e5f64655f6d6965726461_managed_psk
+...      ...
+
+connmanctl> agent on
+connmanctl> connect  <service>
+Passphrase? $PASS
+connmanctl> quit
+
+* SD boot
+
+100 ohms P8.43 to GND (presses boot button)
+
+
+
+* standoffs
+
+| board    |   dia | thickness |
+|----------+-------+-----------|
+| BBGW     | 0.125 |     0.060 |
+| VEML6075 | 0.095 |     0.060 |
+| BME680   | 0.080 |     0.060 |
+|          |       |           |
+
+* weewx
+
+** install
+*** sudo apt install python3-configobj
+*** sudo apt install python3-pil
+*** sudo apt install python3-serial
+*** sudo apt install python3-usb
+*** sudo apt install python3-pip
+*** sudo apt install python3-cheetah
+*** sudo apt install python3-ephem
+*** tar xf archive/weewx-4.2.0.tar.gz
+*** cd weewx-4.2.0/
+*** python3 ./setup.py build
+*** sudo python3 ./setup.py install
+*** dpkg-reconfigure tzdata
+*** sudo cp /home/weewx/util/init.d/weewx.debian /etc/init.d/weewx
+*** sudo chmod +x /etc/init.d/weewx
+*** sudo update-rc.d weewx defaults 98
+*** sudo /etc/init.d/weewx start
+
+
+** SCZ skin
+rsync -avz weewx-4.2.0/skins/SCZ weather:wx/skins/SCZ
+
+** PM sensor stack
+user/pm5003.py
+
+| name     | type   | sensor  | var                 |
+|----------+--------+---------+---------------------|
+| pm1_0    | ug/m^3 | PMS5003 | pm_1_0_standard     |
+| pm2_5    | ug/m^3 | PMS5003 | pm_2_5_standard     |
+| pm10_0   | ug/m^3 | PMS5003 | pm_10_0_standard    |
+| pm1_0a*  | ug/m^3 | PMS5003 | pm_1_0_atmospheric  |
+| pm2_5a*  | ug/m^3 | PMS5003 | pm_2_5_atmospheric  |
+| pm10_0a* | ug/m^3 | PMS5003 | pm_10_0_atmospheric |
+| pm0_3p*  | #/0.1L | PMS5003 | pm_0_3_particle     |
+| pm0_5p*  | #/0.1L | PMS5003 | pm_0_5_particle     |
+| pm1_0p*  | #/0.1L | PMS5003 | pm_1_0_particle     |
+| pm2_5p*  | #/0.1L | PMS5003 | pm_2_5_particle     |
+| pm5_0p*  | #/0.1L | PMS5003 | pm_5_0_particle     |
+| pm10_0p* | #/0.1L | PMS5003 | pm_10_0_particle    |
+|----------+--------+---------+---------------------|
+
+
+** BME680
+
+in_humidityrelative_input
+in_pressure_input
+in_resistance_input
+in_temp_input
+
+| weewx loop  | weewx unit | sensor | input                     |
+|-------------+------------+--------+---------------------------|
+| extraHumid1 | percent    | BME680 | in_humidityrelative_input |
+| pressure    | hPa        | BME680 | in_pressure_input         |
+| leafwet1    | count      | BME680 | in_resistance_input       |
+| extraTemp1  | degree_C   | BME680 | in_temp_input             |
+
+
+29.9212 inHg = 1013.25hPa
+
+** VEML6075
+
+| name      | type | var  |
+|-----------+------+------|
+| lux_uva*  |      | uva  |
+| lux_uvb*  |      | uvb  |
+| lux_vis*  |      | vis  |
+| lux_ir*   |      | ir   |
+| lux_dark* |      | dark |
+| UV        |      | uvi  |
+
+
+** ADS-ws1 weewx interface
+
+| key           |  record | unit                         |
+|---------------+---------+------------------------------|
+|               |         |                              |
+| windSpeed     |     0:4 | 0.1 * MILE_PER_KM) # mph     |
+| windDir       |     6:8 | 1.411764)  # compass deg     |
+| outTemp       |    8:12 | 0.1, True)  # degree_F       |
+| rain_total    |   12:16 | 0.01)  # inch                |
+| barometer     |   16:20 | 0.1 * INHG_PER_MBAR)  # inHg |
+| inTemp        |   20:24 | 0.1, True)  # degree_F       |
+| outHumidity   |   24:28 | 0.1)  # percent              |
+| inHumidity    |   28:32 | 0.1)  # percent              |
+| day_of_year   |   32:36 |                              |
+| minute_of_day |   36:40 |                              |
+| daily_rain    |   40:44 | 0.01)  # inch                |
+| wind_average  |   44:48 | 0.1 * MILE_PER_KM            |
+
+Rename inHumidity -> outHumidity,
+       inTemp -> OutTemp
+
+
+** AQI
+
+Needs
+
+| pm2_5    | pms5003 |
+| pm10_0   | pms5003 |
+| temp     | bme680  |
+| pressure | bme680  |
+|          |         |
+
+* skins
+
+                extraHumid1 = Mast Humidity
+                pressure = Mast Barometric Pressure
+                leafWet1 = Mast Gas Sensor
+                pm1_0 = Mast PM 1.0
+                pm2_5 = Mast PM 2.5
+                pm10_0 = Mast PM 10.0
+
+
+| var         | hilo | skin  | statistics | current | index      |
+|             | .inc | .conf | .inc       | .inc    | .html.tmpl |
+|-------------+------+-------+------------+---------+------------|
+| extraHumid1 | *    | *     | *          | *       | *          |
+| pressure    | *    | *     | *          | *       | *          |
+| leafwet1    | +    | +     | +          | +       | +          |
+| pm1_0       | *    | *     | *          | *       | *          |
+| pm2_5       | *    | *     | *          | *       | *          |
+| pm10_0      | *    | *     | *          | *       | *          |
+| UV          |  *   | *     | *          | *       | *          |
+|-------------+------+-------+------------+---------+------------|
+| ERROR SCZ.6 |      | +     |            |         | +          |
+| ERROR SCZ.7 | ?    | ?     | ?          | ?       | ?          |
+
+** bugs
+** month inside temp/humidity
+
+* crap config wifi
+
+(crap)
+https://www.digikey.com/en/maker/blogs/bbg-wireless-configuring-wi-fi
+
+     sudo nano /etc/network/interfaces
+Add the following lines to configure your wireless connection. Where ssid is the name of your network and the psk is the password for your Wi-Fi network.
+     allow-hotplug wlan0
+     iface wlan0 inet dhcp
+          wpa-ssid "ssid"
+          wpa-psk "psk"
+
+    If you are unsure of your wireless network name, then you can enter the following command to run a scan of all nearby wireless devices:
+    iwlist wlan0 scan
+
+Save the file CTRL-O and exit the text editor CTRL-X
+Now for the changes to have taken affect you need to restart the network interfaces with the following command:
+     sudo /etc/init.d/networking restart
+temppwd

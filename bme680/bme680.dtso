@@ -1,0 +1,30 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,beaglebone\0ti,beaglebone-black\0ti,beaglebone-green";
+
+	fragment@0 {
+		target-path = [ 2f 00 ];
+		__overlay__ {
+			chosen {
+				overlays {
+					BME680 = "Sun Oct 25 06:27:00 2020";
+				};
+			};
+		};
+	};
+
+	fragment@0 {
+		target = <&i2c2>;
+		__overlay__ {
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			bme680@77 {
+				compatible = "bosch,bme680";
+				reg = <0x77>;
+			};
+		};
+	};
+};

@@ -228,8 +228,21 @@ class StationSerial(object):
     def open(self):
         import serial
         log.debug("open serial port %s" % self.port)
-        self.serial_port = serial.Serial(self.port, self.baudrate,
-                                         timeout=self.timeout)
+        max_tries = 10
+        wait_before_retry = 5
+        for ntries in range(max_tries):
+            try:
+                self.serial_port = serial.Serial(self.port, self.baudrate,
+                                                 timeout=self.timeout)
+                return
+            except (serial.serialutil.SerialException, weewx.WeeWxIOError) as e:
+                log.info("Failed attempt %d of %d to open %s: %s" %
+                         (ntries + 1, max_tries, self.port, e))
+                time.sleep(wait_before_retry)
+        else:
+            msg = "Max retries (%d) exceeded for open %s" % (max_tries, self.port)
+            log.error(msg)
+            raise weewx.RetriesExceeded(msg)
 
     def close(self):
         if self.serial_port is not None:

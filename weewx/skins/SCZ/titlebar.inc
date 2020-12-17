@@ -10,6 +10,7 @@
     <p class="lastupdate">$current.dateTime</p>
     <a href="mobile/">mobile</a>
     <a href="smartphone/">smartphone</a>
+    <a href="https://forecast.weather.gov/MapClick.php?lat=36.974240000000066&lon=-122.03097999999994">forecast</a>
   </div>
   <div id="rss_link"><a href="rss.xml">RSS</a></div>
   <div id="reports">

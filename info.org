@@ -215,7 +215,12 @@ Rename inHumidity -> outHumidity,
 
 ** AQI
 
-Needs
+   https://github.com/jonathankoren/weewx-aqi
+
+commit fd1d500def49853b3dc483b6ff7b0e12d2b7774f
+
+
+Needs:
 
 | pm2_5    | pms5003 |
 | pm10_0   | pms5003 |

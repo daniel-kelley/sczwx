@@ -51,3 +51,6 @@ class Add_VEML6075(StdService):
                 syslog.syslog(syslog.LOG_INFO, "VEML6075 YAML load error")
         else:
             syslog.syslog(syslog.LOG_INFO, "VEML6075 exec error %d" % err)
+            syslog.syslog(syslog.LOG_INFO, "VEML6075 cmd %s" % self.cmd)
+            syslog.syslog(syslog.LOG_INFO, "VEML6075 stdout %s" % rsp.stdout)
+            syslog.syslog(syslog.LOG_INFO, "VEML6075 stderr %s" % rsp.stderr)

@@ -34,6 +34,8 @@ class Add_PMS5003(StdService):
       # Internal attributes
       self.cmd = [
           config_dict['PMS5003']['prog'], # pms5003
+          "-c",
+          "64",
           "-f",
           config_dict['PMS5003']['port'] # "/dev/ttyS1" # from DB
       ]
@@ -53,3 +55,6 @@ class Add_PMS5003(StdService):
                 syslog.syslog(syslog.LOG_INFO, "PMS5003 YAML load error")
         else:
             syslog.syslog(syslog.LOG_INFO, "PMS5003 exec error %d" % err)
+            syslog.syslog(syslog.LOG_INFO, "PMS5003 cmd %s" % self.cmd)
+            syslog.syslog(syslog.LOG_INFO, "PMS5003 stdout %s" % rsp.stdout)
+            syslog.syslog(syslog.LOG_INFO, "PMS5003 stderr %s" % rsp.stderr)

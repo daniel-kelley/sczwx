@@ -13,6 +13,9 @@ ExecStart=/home/weewx/bin/weewxd --daemon --pidfile=/var/run/weewx.pid /home/wee
 ExecReload=/bin/kill -HUP $MAINPID
 Type=forking
 PIDFile=/var/run/weewx.pid
+Restart=always
+# StartLimitIntervalSec=10s
+# StartLimitBurst=5
 #User=weewx
 #Group=weewx
 
